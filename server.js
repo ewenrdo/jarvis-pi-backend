@@ -1,26 +1,49 @@
 const http = require('http');
+const path = require('path');
+const os = require('os');
 const { exec } = require('child_process');
 const Evdev = require('evdev');
+require('dotenv').config({ override: true });
 
 const PORT = process.env.PORT || 5788;
-const FRONT_PATH = process.env.PATH_TO_FRONT || '.';
+const FRONT_PATH = resolveFrontPath(process.env.PATH_TO_FRONT);
 const reader = new Evdev();
 
-console.log("Démarrage du front-end Vite...");
-exec(`npm run dev --prefix ${FRONT_PATH}`, (err) => {
-    if (err) {
-        console.error("Erreur lors du lancement de Vite :", err);
-    }
-});
-
-setTimeout(() => {
-    console.log("Lancement de Chromium en mode kiosque...");
-    exec('chromium-browser --kiosk http://localhost:3000 &', (err) => {
+if (FRONT_PATH) {
+    console.log("Démarrage du front-end Vite...");
+    exec(`npm run dev --prefix ${FRONT_PATH}`, (err) => {
         if (err) {
-            console.log("Impossible de lancer chromium-browser (déjà ouvert ou non installé ?)");
+            console.error("Erreur lors du lancement de Vite :", err);
         }
     });
-}, 2000);
+
+    setTimeout(() => {
+        console.log("Lancement de Chromium en mode kiosque...");
+        exec('chromium-browser --kiosk http://localhost:3000 &', (err) => {
+            if (err) {
+                console.log("Impossible de lancer chromium-browser (déjà ouvert ou non installé ?)");
+            }
+        });
+    }, 2000);
+} else {
+    console.log("Le chemin vers le front-end n'est pas défini. Veuillez définir la variable d'environnement PATH_TO_FRONT.");
+}
+
+function resolveFrontPath(frontPath) {
+    if (!frontPath) {
+        return null;
+    }
+
+    if (frontPath === '~') {
+        return os.homedir();
+    }
+
+    if (frontPath.startsWith('~/')) {
+        return path.join(os.homedir(), frontPath.slice(2));
+    }
+
+    return path.isAbsolute(frontPath) ? frontPath : path.resolve(process.cwd(), frontPath);
+}
 
 const server = http.createServer((req, res) => {
     res.setHeader('Access-Control-Allow-Origin', '*');
@@ -87,7 +110,11 @@ reader.on('device', (device) => {
     });
 });
 
-reader.search();
+reader.search('/dev/input', 'event.*', function(err, files) {
+    if (err) {
+        console.error("Erreur lors de la recherche des périphériques evdev :", err);
+    }
+});
 
 async function sendKodiCommand(addonid, res) {
     try {
