@@ -9,6 +9,11 @@ const PORT = process.env.PORT || 5788;
 const FRONT_PATH = resolveFrontPath(process.env.PATH_TO_FRONT);
 const reader = new Evdev();
 
+// Nettoyage des instances fantômes de Kodi au démarrage du serveur
+exec('pkill -9 kodi', () => {
+    console.log("Nettoyage initial des processus Kodi effectué.");
+});
+
 if (FRONT_PATH) {
     console.log("Démarrage du front-end Vite...");
     exec(`npm run dev --prefix ${FRONT_PATH}`, (err) => {
@@ -66,15 +71,19 @@ const server = http.createServer((req, res) => {
         req.on('end', () => {
             try {
                 const { addonid } = JSON.parse(body);
-
+                console.log(`Requête reçue pour lancer l'addon Kodi : ${addonid}`);
+                
                 exec('pgrep kodi', (err, stdout) => {
                     if (err) {
-                        exec('kodi &');
-                        setTimeout(() => {
-                            sendKodiCommand(addonid, res);
-                            focusKodi();
-                        }, 3000);
+                        console.log("Kodi n'est pas en cours d'exécution. Nettoyage et lancement...");
+                        exec('pkill -9 kodi; DISPLAY=:0 kodi &', () => {
+                            setTimeout(() => {
+                                sendKodiCommand(addonid, res);
+                                focusKodi();
+                            }, 3000);
+                        });
                     } else {
+                        console.log("Kodi est déjà en cours d'exécution. Envoi de la commande JSON-RPC...");
                         sendKodiCommand(addonid, res);
                         focusKodi();
                     }
@@ -150,7 +159,7 @@ async function sendKodiCommand(addonid, res) {
 }
 
 function focusKodi() {
-    exec('wmctrl -a Kodi', (err) => {
+    exec('DISPLAY=:0 wmctrl -a Kodi', (err) => {
         if (err) {
             console.log("Impossible de basculer le focus sur Kodi.");
         }
@@ -158,7 +167,7 @@ function focusKodi() {
 }
 
 function focusFrontend(res) {
-    exec('wmctrl -a Chromium', (err) => {
+    exec('DISPLAY=:0 wmctrl -a Chromium', (err) => {
         if (err) {
             exec('chromium-browser --kiosk http://localhost:3000 &');
         }
