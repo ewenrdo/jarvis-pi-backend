@@ -1,0 +1,16 @@
+{
+  "name": "jarvis-pi-backend",
+  "version": "1.0.0",
+  "description": "API for jarvis-pi dashboard on RaspOS",
+  "license": "ISC",
+  "author": "Ewen Rodrigues de Oliveira",
+  "type": "commonjs",
+  "main": "server.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "evdev": "^0.3.0"
+  }
+}
