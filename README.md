@@ -5,7 +5,9 @@
 
 Installez les dépendances systèmes suivantes :
 ```bash
-sudo apt install wmctrl
+sudo apt update
+sudo apt install wmctrl brightnessctl
+sudo usermod -aG video $USER
 ```
 
 Sur le Raspberry, choisissez un environnement de bureau compatible avec `wmctrl` (comme X11 - XORG). Si vous utilisez Wayland, la commande `wmctrl` ne fonctionnera pas.
@@ -33,6 +35,14 @@ sudo cp jarvis-pi-backend.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable jarvis-pi-backend.service
 sudo systemctl start jarvis-pi-backend.service
+```
+
+Si le service systemd lance une interface graphique (comme Chromium), assurez-vous que la variable d'environnement `DISPLAY` est bien définie dans votre fichier `.service` :
+
+```ini
+[Service]
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=/home/votre_utilisateur/.Xauthority
 ```
 
 ## Réflexion
