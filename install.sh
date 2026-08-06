@@ -5,10 +5,10 @@ set -e
 
 echo "=== Début de l'installation de Jarvis Pi Backend ==="
 
-# 1. Mise à jour et installation des dépendances système
-echo "--- Installation des dépendances système (Kodi, Chromium, wmctrl, brightnessctl) ---"
+# 1. Mise à jour et installation des dépendances système (avec Kodi, Chromium, et InputStream Adaptive)
+echo "--- Installation des dépendances système (Kodi, InputStream Adaptive, Chromium, wmctrl, brightnessctl) ---"
 sudo apt update
-sudo apt install -y wmctrl brightnessctl chromium-browser kodi
+sudo apt install -y wmctrl brightnessctl chromium-browser kodi kodi-inputstream-adaptive wget
 
 # 2. Configuration des groupes utilisateurs
 echo "--- Configuration des permissions utilisateurs ---"
@@ -35,7 +35,11 @@ cd "$FRONT_DIR"
 npm install
 cd - > /dev/null
 
-# 4. Configuration interactive du fichier .env
+# 4. Téléchargement du repository CastagnaIT pour Kodi (pour YouTube notamment)
+echo "--- Téléchargement du repository Kodi CastagnaIT ---"
+wget https://github.com/CastagnaIT/repository.castagnait/raw/kodi/repository.castagnait-2.0.1.zip -O "$HOME/repository.castagnait.zip"
+
+# 5. Configuration interactive du fichier .env
 ENV_FILE=".env"
 echo "--- Configuration du fichier .env ---"
 
@@ -76,11 +80,11 @@ else
     echo "Conservation du fichier .env actuel."
 fi
 
-# 5. Installation des dépendances npm du backend
+# 6. Installation des dépendances npm du backend
 echo "--- Installation des dépendances npm du backend ---"
 npm install
 
-# 6. Configuration optionnelle du service systemd (Démarrage auto + redémarrage sur crash)
+# 7. Configuration optionnelle du service systemd (Démarrage auto + redémarrage sur crash)
 echo "------------------------------------------------"
 read -p "Souhaitez-vous lancer le serveur automatiquement au démarrage et le relancer en cas de crash (service Systemd) ? (y/N) : " AUTOSTART
 AUTOSTART=${AUTOSTART:-N}
@@ -119,3 +123,4 @@ else
 fi
 
 echo "=== Installation terminée avec succès ! ==="
+echo "Le fichier zip du repo Kodi CastagnaIT a été téléchargé dans votre dossier personnel (~/repository.castagnait.zip)."
