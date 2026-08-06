@@ -1,6 +1,10 @@
 const { exec, spawn } = require('child_process');
 const os = require('os');
 
+function shouldReloadAtMidnight(now = new Date()) {
+    return now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() < 5;
+}
+
 function launchChromiumKiosk(url) {
     const browserCandidates = [process.env.CHROMIUM_BINARY || 'chromium-browser', 'chromium'];
     attemptLaunchChromium(browserCandidates, 0, url);
@@ -41,11 +45,51 @@ function buildChromiumEnv() {
 }
 
 function createFrontendService(frontPath) {
+    function startTimeBasedActions() {
+        let midnightReloadTriggered = false;
+
+        setInterval(() => {
+            const now = new Date();
+
+            if (!shouldReloadAtMidnight(now)) {
+                midnightReloadTriggered = false;
+                return;
+            }
+
+            if (midnightReloadTriggered) {
+                return;
+            }
+
+            midnightReloadTriggered = true;
+            console.log('Minuit atteint, rechargement de Chromium...');
+            reloadChromium('http://localhost:3000');
+        }, 1000);
+    }
+
+    function reloadChromium(url = 'http://localhost:3000') {
+        exec('DISPLAY=:0 wmctrl -a Chromium', (err) => {
+            if (err) {
+                console.log('Fenêtre Chromium introuvable, relance du navigateur...');
+                launchChromiumKiosk(url);
+                return;
+            }
+
+            exec('DISPLAY=:0 xdotool search --onlyvisible --class Chromium windowfocus key --clearmodifiers ctrl+R', (xdotoolErr) => {
+                if (xdotoolErr) {
+                    console.log('Impossible de recharger via xdotool, relance du navigateur...');
+                    launchChromiumKiosk(url);
+                }
+            });
+        });
+    }
+
     function launch() {
         if (!frontPath) {
             console.log("Le chemin vers le front-end n'est pas défini. Veuillez définir la variable d'environnement PATH_TO_FRONT.");
             return;
         }
+
+        startTimeBasedActions();
 
         console.log("Démarrage du front-end Vite...");
         exec(`npm run dev --prefix ${frontPath}`, (err) => {
@@ -76,9 +120,11 @@ function createFrontendService(frontPath) {
     return {
         launch,
         focus,
+        reloadChromium,
     };
 }
 
 module.exports = {
     createFrontendService,
+    shouldReloadAtMidnight,
 };
