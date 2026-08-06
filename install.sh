@@ -80,5 +80,42 @@ fi
 echo "--- Installation des dépendances npm du backend ---"
 npm install
 
+# 6. Configuration optionnelle du service systemd (Démarrage auto + redémarrage sur crash)
+echo "------------------------------------------------"
+read -p "Souhaitez-vous lancer le serveur automatiquement au démarrage et le relancer en cas de crash (service Systemd) ? (y/N) : " AUTOSTART
+AUTOSTART=${AUTOSTART:-N}
+
+if [[ "$AUTOSTART" =~ ^[Yy]$ ]]; then
+    BACKEND_DIR="$(pwd)"
+    SERVICE_FILE="/etc/systemd/system/jarvis-pi-backend.service"
+
+    echo "--- Création du service Systemd ---"
+    sudo bash -c "cat << EOF > $SERVICE_FILE
+[Unit]
+Description=Jarvis Pi Backend Service
+After=network.target graphical.target
+
+[Service]
+Type=simple
+User=$USER
+WorkingDirectory=$BACKEND_DIR
+ExecStart=/usr/bin/node $BACKEND_DIR/server.js
+Restart=always
+RestartSec=10
+Environment=DISPLAY=:0
+Environment=XAUTHORITY=$HOME/.Xauthority
+
+[Install]
+WantedBy=multi-user.target
+EOF"
+
+    echo "--- Activation et démarrage du service ---"
+    sudo systemctl daemon-reload
+    sudo systemctl enable jarvis-pi-backend.service
+    sudo systemctl start jarvis-pi-backend.service
+    echo "Service systemd configuré et démarré avec succès !"
+else
+    echo "Service systemd ignoré."
+fi
+
 echo "=== Installation terminée avec succès ! ==="
-echo "Vous pouvez lancer votre serveur avec : node server.js"
