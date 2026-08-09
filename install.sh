@@ -85,6 +85,8 @@ if [[ "$RECONFIGURE" =~ ^[Yy]$ ]]; then
     read -p "Heure d'extinction de l'écran (00-23) [21] : " SCREEN_END_INPUT
     SCREEN_END=${SCREEN_END_INPUT:-21}
 
+    read -p "Votre clé API IDFM (Île-de-France Mobilités) : " IDFM_API_KEY
+
     read -p "Adresse e-mail Renault : " RENAULT_USERNAME
     read -p "Mot de passe Renault : " RENAULT_PASSWORD
     read -p "Numéro VIN du véhicule : " VIN_ID
@@ -102,6 +104,7 @@ MY_RENAULT_USERNAME=$RENAULT_USERNAME
 MY_RENAULT_PASSWORD=$RENAULT_PASSWORD
 VIN_ID=$VIN_ID
 KAMEREON_ACCOUNT_ID=$KAMEREON_ACCOUNT_ID
+IDFM_API_KEY=$IDFM_API_KEY
 EOF
     echo "Fichier .env généré avec succès !"
 else

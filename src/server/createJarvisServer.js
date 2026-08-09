@@ -1,6 +1,6 @@
 const http = require('http');
 
-function createJarvisServer({ kodiService, renaultService, notificationService }) {
+function createJarvisServer({ kodiService, renaultService, notificationService, idfmService }) {
     return http.createServer((req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -56,6 +56,32 @@ function createJarvisServer({ kodiService, renaultService, notificationService }
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(updatedNotification));
+        } else if (req.method === 'GET' && req.url === '/api/idfm/disruptions') {
+            idfmService.getDisruptions()
+                .then((disruptions) => {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(disruptions));
+                })
+                .catch((error) => {
+                    console.error('Erreur lors de la récupération des disruptions IDFM :', error);
+                    res.writeHead(502, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Impossible de récupérer les disruptions IDFM' }));
+                });
+        } else if (req.method === 'GET' && req.url === '/api/idfm/next-departures') {
+
+            const ermontStopId = 'STIF%3AStopPoint%3AQ%3A41085%3A';
+            const ermontCLineId = 'STIF%3ALine%3AC01727%3A1%3A';
+
+            idfmService.nextTrainsFromStation(ermontStopId)
+                .then((departures) => {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(departures));
+                })
+                .catch((error) => {
+                    console.error('Erreur lors de la récupération des prochains départs IDFM :', error);
+                    res.writeHead(502, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Impossible de récupérer les prochains départs IDFM' }));
+                });
         } else {
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: "Route non trouvée" }));

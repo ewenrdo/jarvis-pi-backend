@@ -1,15 +1,17 @@
-const { PORT, FRONT_PATH, RENAULT_STATS_PATH, KODI_USER, KODI_PASSWORD } = require('./src/config/env');
+const { PORT, FRONT_PATH, RENAULT_STATS_PATH, KODI_USER, KODI_PASSWORD, IDFM_API_KEY } = require('./src/config/env');
 const { createFrontendService } = require('./src/services/frontendService');
 const { createKodiService } = require('./src/services/kodiService');
 const { createInputService, setBrightness } = require('./src/services/inputService');
 const { createJarvisServer } = require('./src/server/createJarvisServer');
 const { createRenaultService } = require('./src/services/renaultService');
 const { getNotificationService } = require('./src/services/notificationService');
+const { createIDFMService } = require('./src/services/idfmService');
 
 const frontendService = createFrontendService(FRONT_PATH);
 const kodiService = createKodiService({ KODI_USER, KODI_PASSWORD });
 const renaultService = createRenaultService({ statsPiPath: RENAULT_STATS_PATH });
 const notificationService = getNotificationService();
+const idfmService = createIDFMService({ apiKey: IDFM_API_KEY });
 
 // Nettoyage des instances fantômes de Kodi au démarrage du serveur
 kodiService.resetKodiProcess();
@@ -27,6 +29,7 @@ const server = createJarvisServer({
     kodiService,
     renaultService,
     notificationService,
+    idfmService
 });
 
 getNotificationService().createNotification({
