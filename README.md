@@ -20,9 +20,15 @@ Sur le Raspberry, choisissez un environnement de bureau compatible avec `wmctrl`
 
 Par défaut, le serveur tourne sous **5788** _(sauf si vous définissez la variable d'environnement `PORT` pour un autre port)_
 
-Assurez-vous que l'interface web tourne sous le port **3000** et Kodi sous le port **8080**. Si vous avez modifié ces ports, vous devrez également modifier le code du serveur pour qu'il corresponde à vos paramètres.
+Assurez-vous que les services suivants tournent sur les ports correspondants :
+- Interface web : **3000** _(cf. [ewenrdo/jarvis-pi](https://github.com/ewenrdo/jarvis-pi))_
+- Kodi : **8080** _(cf. [Kodi](https://kodi.tv))
+- Renault StatsPi : **5789** _(cf. [ewenrdo/renault-statsPi](https://github.com/ewenrdo/renault-statsPi))_
 
-**ATTENTION :** Assurez-vous que le port USB où est branché la télécommande soit autorisé à rester ouvert même lorsque l'écran est éteint. Sinon, la télécommande ne fonctionnera pas pour rallumer l'écran.
+Si vous avez modifié ces ports, vous devrez également modifier le code du serveur pour qu'il corresponde à vos paramètres.
+
+> [!NOTE]
+> Assurez-vous que le port USB où est branché la télécommande soit autorisé à rester ouvert même lorsque l'écran est éteint. Sinon, la télécommande ne fonctionnera pas pour rallumer l'écran.
 
 ## Gestion des autorisations
 
