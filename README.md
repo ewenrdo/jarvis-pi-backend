@@ -1,7 +1,11 @@
 # Jarvis Pi Backend
 
+Serveur Node.js pour gérer les commandes et récupérer les données de certains services pour un PDA. Un _repository_ pour le projet est disponible à [ewenrdo/jarvis-pi-frontend](https://github.com/ewenrdo/jarvis-pi-frontend).
 
 ## Configuration
+
+> ![NOTE]
+> Vous pouvez utiliser le script `install.sh` pour installer automatiquement les dépendances et configurer le serveur. Il est recommandé de l'utiliser pour éviter les erreurs de configuration.
 
 Installez les dépendances systèmes suivantes :
 ```bash
