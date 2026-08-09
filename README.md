@@ -1,6 +1,6 @@
 # Jarvis Pi Backend
 
-Serveur Node.js pour gérer les commandes et récupérer les données de certains services pour un PDA. Un _repository_ pour le projet est disponible à [ewenrdo/jarvis-pi-frontend](https://github.com/ewenrdo/jarvis-pi-frontend).
+Serveur Node.js pour gérer les commandes et récupérer les données de certains services pour un PDA. Un _repository_ pour le projet est disponible à [ewenrdo/jarvis-pi](https://github.com/ewenrdo/jarvis-pi).
 
 ## Configuration
 
