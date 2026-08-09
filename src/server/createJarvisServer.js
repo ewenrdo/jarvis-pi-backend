@@ -1,9 +1,9 @@
 const http = require('http');
 
-function createJarvisServer({ kodiService, renaultService }) {
+function createJarvisServer({ kodiService, renaultService, notificationService }) {
     return http.createServer((req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
-        res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
         res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
 
         if (req.method === 'OPTIONS') {
@@ -40,6 +40,22 @@ function createJarvisServer({ kodiService, renaultService }) {
                     res.writeHead(502, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: 'Impossible de récupérer les stats Renault' }));
                 });
+        } else if (req.method === 'GET' && req.url === '/api/notifications') {
+            const notifications = notificationService.listNotifications();
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(notifications));
+        } else if (req.method === 'DELETE' && req.url.startsWith('/api/notifications/')) {
+            const notificationId = Number(req.url.split('/').pop());
+            const updatedNotification = notificationService.markNotificationAsRead(notificationId);
+
+            if (!updatedNotification) {
+                res.writeHead(404, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ error: 'Notification introuvable' }));
+                return;
+            }
+
+            res.writeHead(200, { 'Content-Type': 'application/json' });
+            res.end(JSON.stringify(updatedNotification));
         } else {
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: "Route non trouvée" }));

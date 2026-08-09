@@ -4,17 +4,19 @@ const { createKodiService } = require('./src/services/kodiService');
 const { createInputService, setBrightness } = require('./src/services/inputService');
 const { createJarvisServer } = require('./src/server/createJarvisServer');
 const { createRenaultService } = require('./src/services/renaultService');
+const { getNotificationService } = require('./src/services/notificationService');
 
 const frontendService = createFrontendService(FRONT_PATH);
 const kodiService = createKodiService({ KODI_USER, KODI_PASSWORD });
 const renaultService = createRenaultService({ statsPiPath: RENAULT_STATS_PATH });
+const notificationService = getNotificationService();
 
 // Nettoyage des instances fantômes de Kodi au démarrage du serveur
 kodiService.resetKodiProcess();
 renaultService.stop();
 
 renaultService.launch();
-frontendService.launch();
+frontendService.launch(process.argv.includes('--dev'));
 
 createInputService({
     onHome: () => frontendService.focus(),
@@ -24,6 +26,13 @@ createInputService({
 const server = createJarvisServer({
     kodiService,
     renaultService,
+    notificationService,
+});
+
+getNotificationService().createNotification({
+  title: 'Jarvis est prêt',
+  content: 'Votre serveur Jarvis est opérationnel et prêt à l\'emploi. Profitez de votre expérience !',
+  datetime: new Date().toISOString(),
 });
 
 server.listen(PORT, () => {

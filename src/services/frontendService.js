@@ -5,14 +5,14 @@ function shouldReloadAtMidnight(now = new Date()) {
     return now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() < 5;
 }
 
-function launchChromiumKiosk(url) {
+function launchChromiumKiosk(url, devMode = false) {
     const browserCandidates = [process.env.CHROMIUM_BINARY || 'chromium-browser', 'chromium'];
-    attemptLaunchChromium(browserCandidates, 0, url);
+    attemptLaunchChromium(browserCandidates, 0, url, devMode);
 }
 
-function attemptLaunchChromium(browserCandidates, index, url) {
+function attemptLaunchChromium(browserCandidates, index, url, devMode) {
     const browserCommand = browserCandidates[index];
-    const child = spawn(browserCommand, ['--kiosk', url], {
+    const child = spawn(browserCommand, [devMode ? '--disable-web-security' : '--kiosk', url], {
         detached: true,
         stdio: 'inherit',
         env: buildChromiumEnv(),
@@ -20,7 +20,7 @@ function attemptLaunchChromium(browserCandidates, index, url) {
 
     child.on('error', (error) => {
         if (error.code === 'ENOENT' && index < browserCandidates.length - 1) {
-            attemptLaunchChromium(browserCandidates, index + 1, url);
+            attemptLaunchChromium(browserCandidates, index + 1, url, devMode);
             return;
         }
 
@@ -83,7 +83,7 @@ function createFrontendService(frontPath) {
         });
     }
 
-    function launch() {
+    function launch(devMode = false) {
         if (!frontPath) {
             console.log("Le chemin vers le front-end n'est pas défini. Veuillez définir la variable d'environnement PATH_TO_FRONT.");
             return;
@@ -99,8 +99,8 @@ function createFrontendService(frontPath) {
         });
 
         setTimeout(() => {
-            console.log("Lancement de Chromium en mode kiosque...");
-            launchChromiumKiosk('http://localhost:3000');
+            console.log(devMode ? "Lancement de Chromium en mode développement..." : "Lancement de Chromium en mode kiosque...");
+            launchChromiumKiosk('http://localhost:3000', devMode);
         }, 2000);
     }
 
