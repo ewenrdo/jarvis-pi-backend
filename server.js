@@ -13,9 +13,10 @@ const renaultService = createRenaultService({ statsPiPath: RENAULT_STATS_PATH })
 const notificationService = getNotificationService();
 const idfmService = createIDFMService({ apiKey: IDFM_API_KEY });
 
-// Nettoyage des instances fantômes de Kodi au démarrage du serveur
+// Nettoyage des instances passées au démarrage du serveur
 kodiService.resetKodiProcess();
-renaultService.stop();
+frontendService.resetFrontProcess();
+renaultService.resetRenaultProcess();
 
 renaultService.launch();
 frontendService.launch(process.argv.includes('--dev'));

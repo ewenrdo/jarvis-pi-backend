@@ -117,10 +117,18 @@ function createFrontendService(frontPath) {
         });
     }
 
+
+    function resetFrontProcess() {
+        exec('pkill -9 chromium', () => {
+            console.log("Nettoyage initial des processus Chromium effectué.");
+        });
+    }
+
     return {
         launch,
         focus,
         reloadChromium,
+        resetFrontProcess,
     };
 }
 

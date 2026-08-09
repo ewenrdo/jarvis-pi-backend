@@ -22,7 +22,7 @@ function createRenaultService({
         return response.json();
     }
 
-    function stop() {
+    function resetRenaultProcess() {
         return new Promise((resolve) => {
             exec('pkill -f "python.*uvicorn index:app" || true', () => {
                 console.log('Processus Renault stats API arrêtés.');
@@ -39,7 +39,7 @@ function createRenaultService({
             return null;
         }
 
-        await stop();
+        await resetRenaultProcess();
         console.log('Démarrage de l’API Renault stats...');
 
         function tryLaunch(command, index) {
@@ -70,7 +70,7 @@ function createRenaultService({
     return {
         getStats,
         launch,
-        stop,
+        resetRenaultProcess,
     };
 }
 
