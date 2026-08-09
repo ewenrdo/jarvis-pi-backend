@@ -1,6 +1,6 @@
 const http = require('http');
 
-function createJarvisServer({ kodiService }) {
+function createJarvisServer({ kodiService, renaultService }) {
     return http.createServer((req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -29,6 +29,17 @@ function createJarvisServer({ kodiService }) {
                     res.end(JSON.stringify({ error: "Requête JSON invalide" }));
                 }
             });
+        } else if (req.method === 'GET' && req.url === '/api/renault/stats') {
+            renaultService.getStats()
+                .then((data) => {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(data));
+                })
+                .catch((error) => {
+                    console.error('Erreur lors de la récupération des stats Renault :', error);
+                    res.writeHead(502, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Impossible de récupérer les stats Renault' }));
+                });
         } else {
             res.writeHead(404, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify({ error: "Route non trouvée" }));
