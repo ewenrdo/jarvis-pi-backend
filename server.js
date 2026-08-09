@@ -47,11 +47,17 @@ server.listen(PORT, () => {
 });
 
 process.on('SIGINT', () => {
-    renaultService.stop();
+    renaultService.resetRenaultProcess();
+    kodiService.resetKodiProcess();
+    frontendService.resetFrontProcess();
+    setInterval(() => { }, 1000); // Empêche le processus de se terminer immédiatement pour permettre le nettoyage
     process.exit(0);
 });
 
 process.on('SIGTERM', () => {
-    renaultService.stop();
+    renaultService.resetRenaultProcess();
+    kodiService.resetKodiProcess();
+    frontendService.resetFrontProcess();
+    setInterval(() => { }, 1000); // Empêche le processus de se terminer immédiatement pour permettre le nettoyage
     process.exit(0);
 });
