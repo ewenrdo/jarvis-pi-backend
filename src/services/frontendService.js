@@ -12,7 +12,11 @@ function launchChromiumKiosk(url, devMode = false) {
 
 function attemptLaunchChromium(browserCandidates, index, url, devMode) {
     const browserCommand = browserCandidates[index];
-    const child = spawn(browserCommand, [devMode ? '--disable-web-security' : '--kiosk', url], {
+    const child = spawn(browserCommand, [
+        devMode ? '--disable-web-security' : '--kiosk',
+        '--overscroll-history-navigation=0', // Empêche le navigateur d'utiliser les retours d'historique
+        url
+    ], {
         detached: true,
         stdio: 'inherit',
         env: buildChromiumEnv(),
