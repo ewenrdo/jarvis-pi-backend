@@ -19,6 +19,7 @@ function attemptLaunchChromium(browserCandidates, index, url, devMode) {
         '--ignore-gpu-blocklist',
         '--enable-gpu-rasterization',
         '--enable-zero-copy',
+        '--remote-debugging-address=0.0.0.0',
         '--remote-debugging-port=9222',
         url
     ], {
