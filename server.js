@@ -22,7 +22,7 @@ renaultService.resetRenaultProcess();
 stremioService.resetStremioProcess();
 
 renaultService.launch();
-frontendService.launch(process.argv.includes('--dev'));
+frontendService.launch(true || process.argv.includes('--dev'));
 
 createInputService({
     onHome: () => frontendService.focus(),
