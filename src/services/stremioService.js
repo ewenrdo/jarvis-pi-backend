@@ -19,17 +19,20 @@ function createStremioService(frontendService) {
         const browserCandidates = [process.env.CHROMIUM_BINARY || 'chromium-browser', 'chromium'];
         const url = 'https://web.stremio.com';
         
-        console.log("Lancement d'une instance isolée de Stremio (Chromium Kiosque avec zoom 150%)...");
+        console.log("Lancement d'une instance isolée de Stremio (profil persistant)...");
         attemptLaunchStremio(browserCandidates, 0, url);
     }
 
     function attemptLaunchStremio(browserCandidates, index, url) {
         const browserCommand = browserCandidates[index];
-        const tempProfileDir = path.join(os.tmpdir(), 'stremio-chromium-profile');
+        
+        // Dossier persistant dans le home de l'utilisateur pour conserver la session
+        const userHome = process.env.SUDO_USER ? `/home/${process.env.SUDO_USER}` : os.homedir();
+        const persistentProfileDir = path.join(userHome, '.stremio-chromium-profile');
 
         stremioProcess = spawn(browserCommand, [
             '--kiosk',
-            `--user-data-dir=${tempProfileDir}`,
+            `--user-data-dir=${persistentProfileDir}`,
             '--force-device-scale-factor=1.5',
             '--overscroll-history-navigation=0',
             '--enable-accelerated-video',
@@ -57,7 +60,8 @@ function createStremioService(frontendService) {
     }
 
     function close(res) {
-        exec('pkill -f "stremio-chromium-profile"', (err) => {
+        // On cible le profil persistant pour fermer les instances correspondantes
+        exec('pkill -f ".stremio-chromium-profile"', (err) => {
             if (err) {
                 console.log("Aucun processus Stremio actif à fermer.");
             } else {
@@ -76,7 +80,7 @@ function createStremioService(frontendService) {
     }
 
     function resetStremioProcess() {
-        exec('pkill -f "stremio-chromium-profile"', () => {
+        exec('pkill -f ".stremio-chromium-profile"', () => {
             console.log("Nettoyage initial des processus Stremio effectué.");
         });
     }
