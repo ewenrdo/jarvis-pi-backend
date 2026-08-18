@@ -39,6 +39,8 @@ function createStremioService(frontendService) {
             '--ignore-gpu-blocklist',
             '--enable-gpu-rasterization',
             '--enable-zero-copy',
+            '--enable-features=VaapiVideoDecoder',
+            '--use-gl=angle',
             url
         ], {
             detached: true,
