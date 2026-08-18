@@ -1,148 +1,93 @@
 const { exec, spawn } = require('child_process');
 const os = require('os');
-
-function shouldReloadAtMidnight(now = new Date()) {
-    return now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() < 5;
-}
-
-function launchChromiumKiosk(url, devMode = false) {
-    const browserCandidates = [process.env.CHROMIUM_BINARY || 'chromium-browser', 'chromium'];
-    attemptLaunchChromium(browserCandidates, 0, url, devMode);
-}
-
-function attemptLaunchChromium(browserCandidates, index, url, devMode) {
-    const browserCommand = browserCandidates[index];
-    const child = spawn(browserCommand, [
-        devMode ? '--disable-web-security' : '--kiosk',
-        '--overscroll-history-navigation=0', // Empêche le navigateur d'utiliser les retours d'historique
-        '--enable-accelerated-video',
-        '--ignore-gpu-blocklist',
-        '--enable-gpu-rasterization',
-        '--enable-zero-copy',
-        '--remote-debugging-address=0.0.0.0',
-        '--remote-debugging-port=9222',
-        url
-    ], {
-        detached: true,
-        stdio: 'inherit',
-        env: buildChromiumEnv(),
-    });
-
-    child.on('error', (error) => {
-        if (error.code === 'ENOENT' && index < browserCandidates.length - 1) {
-            attemptLaunchChromium(browserCandidates, index + 1, url, devMode);
-            return;
-        }
-
-        console.log("Impossible de lancer chromium-browser (déjà ouvert ou non installé ?)");
-    });
-
-    child.unref();
-}
+const path = require('path');
 
 function buildChromiumEnv() {
     const env = { ...process.env };
-
-    // Détermine l'utilisateur actif (que l'on soit en sudo ou en utilisateur standard)
-    const currentUser = process.env.SUDO_USER || process.env.USER || os.userInfo().username;
     const userHome = process.env.SUDO_USER ? `/home/${process.env.SUDO_USER}` : os.homedir();
 
-    // Force le display et l'authentification X11 pour la session graphique
     env.DISPLAY = env.DISPLAY || ':0';
     env.XAUTHORITY = env.XAUTHORITY || `${userHome}/.Xauthority`;
 
     return env;
 }
 
-function createFrontendService(frontPath) {
-    function startTimeBasedActions() {
-        let midnightReloadTriggered = false;
+function createStremioService(frontendService) {
+    let stremioProcess = null;
 
-        setInterval(() => {
-            const now = new Date();
-
-            if (!shouldReloadAtMidnight(now)) {
-                midnightReloadTriggered = false;
-                return;
-            }
-
-            if (midnightReloadTriggered) {
-                return;
-            }
-
-            midnightReloadTriggered = true;
-            console.log('Minuit atteint, rechargement de Chromium...');
-            reloadChromium('http://localhost:3000');
-        }, 1000);
+    function launch() {
+        const browserCandidates = [process.env.CHROMIUM_BINARY || 'chromium-browser', 'chromium'];
+        const url = 'https://web.stremio.com';
+        
+        console.log("Lancement d'une instance isolée de Stremio (Chromium Kiosque avec zoom 150%)...");
+        attemptLaunchStremio(browserCandidates, 0, url);
     }
 
-    function reloadChromium(url = 'http://localhost:3000') {
-        exec('DISPLAY=:0 wmctrl -a Chromium', (err) => {
-            if (err) {
-                console.log('Fenêtre Chromium introuvable, relance du navigateur...');
-                launchChromiumKiosk(url);
-                return;
-            }
+    function attemptLaunchStremio(browserCandidates, index, url) {
+        const browserCommand = browserCandidates[index];
+        const tempProfileDir = path.join(os.tmpdir(), 'stremio-chromium-profile');
 
-            exec('DISPLAY=:0 xdotool search --onlyvisible --class Chromium windowfocus key --clearmodifiers ctrl+R', (xdotoolErr) => {
-                if (xdotoolErr) {
-                    console.log('Impossible de recharger via xdotool, relance du navigateur...');
-                    launchChromiumKiosk(url);
-                }
-            });
-        });
-    }
-
-    function launch(devMode = false) {
-        if (!frontPath) {
-            console.log("Le chemin vers le front-end n'est pas défini. Veuillez définir la variable d'environnement PATH_TO_FRONT.");
-            return;
-        }
-
-        startTimeBasedActions();
-
-        console.log("Démarrage du front-end Vite...");
-        exec(`npm run dev --prefix ${frontPath}`, (err) => {
-            if (err) {
-                console.error("Erreur lors du lancement de Vite :", err);
-            }
+        stremioProcess = spawn(browserCommand, [
+            '--kiosk',
+            `--user-data-dir=${tempProfileDir}`,
+            '--force-device-scale-factor=1.5',
+            '--overscroll-history-navigation=0',
+            '--enable-accelerated-video',
+            '--ignore-gpu-blocklist',
+            '--enable-gpu-rasterization',
+            '--enable-zero-copy',
+            url
+        ], {
+            detached: true,
+            stdio: 'ignore',
+            env: buildChromiumEnv(),
         });
 
-        setTimeout(() => {
-            console.log(devMode ? "Lancement de Chromium en mode développement..." : "Lancement de Chromium en mode kiosque...");
-            launchChromiumKiosk('http://localhost:3000', devMode);
-        }, 2000);
+        stremioProcess.on('error', (error) => {
+            if (error.code === 'ENOENT' && index < browserCandidates.length - 1) {
+                console.log(`Commande '${browserCommand}' introuvable, tentative avec le candidat suivant...`);
+                attemptLaunchStremio(browserCandidates, index + 1, url);
+                return;
+            }
+
+            console.error("Impossible de lancer Stremio (aucun navigateur compatible trouvé ou déjà ouvert).");
+        });
+
+        stremioProcess.unref();
     }
 
-    function focus(res) {
-        exec('DISPLAY=:0 wmctrl -a Chromium', (err) => {
+    function close(res) {
+        exec('pkill -f "stremio-chromium-profile"', (err) => {
             if (err) {
-                launchChromiumKiosk('http://localhost:3000');
+                console.log("Aucun processus Stremio actif à fermer.");
+            } else {
+                console.log("Stremio fermé avec succès.");
+            }
+
+            if (frontendService && typeof frontendService.focus === 'function') {
+                frontendService.focus();
             }
 
             if (res && !res.headersSent) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: "Focus remis sur le Front-end" }));
+                res.end(JSON.stringify({ success: true, message: "Stremio fermé, retour à Jarvis" }));
             }
         });
     }
 
-
-    function resetFrontProcess() {
-        exec('pkill -9 chrom*', () => {
-            console.log("Nettoyage initial des processus Chromium effectué.");
+    function resetStremioProcess() {
+        exec('pkill -f "stremio-chromium-profile"', () => {
+            console.log("Nettoyage initial des processus Stremio effectué.");
         });
     }
 
     return {
         launch,
-        focus,
-        reloadChromium,
-        resetFrontProcess,
+        close,
+        resetStremioProcess,
     };
 }
 
 module.exports = {
-    createFrontendService,
-    shouldReloadAtMidnight,
+    createStremioService,
 };
