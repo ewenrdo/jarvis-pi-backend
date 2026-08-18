@@ -15,6 +15,10 @@ function attemptLaunchChromium(browserCandidates, index, url, devMode) {
     const child = spawn(browserCommand, [
         devMode ? '--disable-web-security' : '--kiosk',
         '--overscroll-history-navigation=0', // Empêche le navigateur d'utiliser les retours d'historique
+        '--enable-accelerated-video',
+        '--ignore-gpu-blocklist',
+        '--enable-gpu-rasterization',
+        '--enable-zero-copy',
         url
     ], {
         detached: true,
