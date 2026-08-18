@@ -20,11 +20,14 @@ function createStremioService(frontendService) {
         const url = 'https://web.stremio.com';
         
         console.log("Lancement d'une instance isolée de Stremio (Chromium Kiosque avec zoom 150%)...");
-        
-        // Dossier de profil temporaire unique pour forcer un processus complètement indépendant de Jarvis
+        attemptLaunchStremio(browserCandidates, 0, url);
+    }
+
+    function attemptLaunchStremio(browserCandidates, index, url) {
+        const browserCommand = browserCandidates[index];
         const tempProfileDir = path.join(os.tmpdir(), 'stremio-chromium-profile');
 
-        stremioProcess = spawn(browserCandidates[0], [
+        stremioProcess = spawn(browserCommand, [
             '--kiosk',
             `--user-data-dir=${tempProfileDir}`,
             '--force-device-scale-factor=1.5',
@@ -40,15 +43,20 @@ function createStremioService(frontendService) {
             env: buildChromiumEnv(),
         });
 
-        stremioProcess.on('error', (err) => {
-            console.error("Erreur lors du lancement de Stremio :", err);
+        stremioProcess.on('error', (error) => {
+            if (error.code === 'ENOENT' && index < browserCandidates.length - 1) {
+                console.log(`Commande '${browserCommand}' introuvable, tentative avec le candidat suivant...`);
+                attemptLaunchStremio(browserCandidates, index + 1, url);
+                return;
+            }
+
+            console.error("Impossible de lancer Stremio (aucun navigateur compatible trouvé ou déjà ouvert).");
         });
 
         stremioProcess.unref();
     }
 
     function close(res) {
-        // Tue spécifiquement les instances de Chromium qui utilisent le profil Stremio
         exec('pkill -f "stremio-chromium-profile"', (err) => {
             if (err) {
                 console.log("Aucun processus Stremio actif à fermer.");
@@ -56,7 +64,6 @@ function createStremioService(frontendService) {
                 console.log("Stremio fermé avec succès.");
             }
 
-            // Remet le focus sur l'interface principale Jarvis[cite: 2]
             if (frontendService && typeof frontendService.focus === 'function') {
                 frontendService.focus();
             }
