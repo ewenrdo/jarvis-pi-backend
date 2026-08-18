@@ -6,8 +6,10 @@ const { createJarvisServer } = require('./src/server/createJarvisServer');
 const { createRenaultService } = require('./src/services/renaultService');
 const { getNotificationService } = require('./src/services/notificationService');
 const { createIDFMService } = require('./src/services/idfmService');
+const { createStremioService } = require('./src/services/stremioService');
 
 const frontendService = createFrontendService(FRONT_PATH);
+const stremioService = createStremioService(frontendService);
 const kodiService = createKodiService({ KODI_USER, KODI_PASSWORD });
 const renaultService = createRenaultService({ statsPiPath: RENAULT_STATS_PATH });
 const notificationService = getNotificationService();
@@ -17,6 +19,7 @@ const idfmService = createIDFMService({ apiKey: IDFM_API_KEY });
 kodiService.resetKodiProcess();
 frontendService.resetFrontProcess();
 renaultService.resetRenaultProcess();
+stremioService.resetStremioProcess();
 
 renaultService.launch();
 frontendService.launch(process.argv.includes('--dev'));
@@ -24,13 +27,15 @@ frontendService.launch(process.argv.includes('--dev'));
 createInputService({
     onHome: () => frontendService.focus(),
     onPower: () => kodiService.suspendSystem(),
+    onMenu: () => stremioService.close(),
 });
 
 const server = createJarvisServer({
     kodiService,
     renaultService,
     notificationService,
-    idfmService
+    idfmService,
+    stremioService
 });
 
 getNotificationService().createNotification({

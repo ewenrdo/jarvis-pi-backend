@@ -1,6 +1,6 @@
 const http = require('http');
 
-function createJarvisServer({ kodiService, renaultService, notificationService, idfmService }) {
+function createJarvisServer({ kodiService, renaultService, notificationService, idfmService, stremioService }) {
     return http.createServer((req, res) => {
         res.setHeader('Access-Control-Allow-Origin', '*');
         res.setHeader('Access-Control-Allow-Methods', 'GET, POST, DELETE, OPTIONS');
@@ -28,6 +28,12 @@ function createJarvisServer({ kodiService, renaultService, notificationService, 
                     res.writeHead(400, { 'Content-Type': 'application/json' });
                     res.end(JSON.stringify({ error: "Requête JSON invalide" }));
                 }
+            });
+        } else if (req.method === 'POST' && req.url === '/api/stremio') {
+            stremioService.launch();
+            req.on('end', () => {
+                res.writeHead(200, { 'Content-Type': 'application/json' });
+                res.end(JSON.stringify({ success: true, message: "Stremio lancé" }));
             });
         } else if (req.method === 'GET' && req.url === '/api/renault/stats') {
             renaultService.getStats()
