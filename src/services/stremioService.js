@@ -59,8 +59,7 @@ function createStremioService(frontendService) {
         stremioProcess.unref();
     }
 
-    function close(res) {
-        // On cible le profil persistant pour fermer les instances correspondantes
+    function close(onClosed) {
         exec('pkill -f ".stremio-chromium-profile"', (err) => {
             if (err) {
                 console.log("Aucun processus Stremio actif à fermer.");
@@ -72,13 +71,11 @@ function createStremioService(frontendService) {
                 frontendService.focus();
             }
 
-            if (res && !res.headersSent) {
-                res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: "Stremio fermé, retour à Jarvis" }));
+            if (typeof onClosed === 'function') {
+                onClosed();
             }
         });
     }
-
     function resetStremioProcess() {
         exec('pkill -f ".stremio-chromium-profile"', () => {
             console.log("Nettoyage initial des processus Stremio effectué.");

@@ -29,11 +29,10 @@ function createJarvisServer({ kodiService, renaultService, notificationService, 
                     res.end(JSON.stringify({ error: "Requête JSON invalide" }));
                 }
             });
-        } else if (req.method === 'POST' && req.url === '/api/stremio') {
-            stremioService.launch();
-            req.on('end', () => {
+        } else if (req.method === 'POST' && req.url === '/api/stremio/close') {
+            stremioService.close(() => {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: "Stremio lancé" }));
+                res.end(JSON.stringify({ success: true, message: "Stremio fermé, retour à Jarvis" }));
             });
         }else if (req.method === 'POST' && req.url === '/api/stremio/close') {
             stremioService.close(res);
