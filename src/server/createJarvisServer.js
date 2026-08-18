@@ -37,9 +37,10 @@ function createJarvisServer({ kodiService, renaultService, notificationService, 
             });
 
         } else if (req.method === 'GET' && req.url === '/api/stremio/close') {
-            stremioService.close(() => {
+            stremioService.close();
+            req.on('end', () => {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: "Stremio fermé, retour à Jarvis" }));
+                res.end(JSON.stringify({ success: true, message: "Stremio fermé" }));
             });
         } else if (req.method === 'GET' && req.url === '/api/renault/stats') {
             renaultService.getStats()
