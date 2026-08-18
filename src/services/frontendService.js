@@ -21,6 +21,7 @@ function attemptLaunchChromium(browserCandidates, index, url, devMode) {
         '--enable-zero-copy',
         '--remote-debugging-address=0.0.0.0',
         '--remote-debugging-port=9222',
+        '--password-store=basic',
         url
     ], {
         detached: true,
