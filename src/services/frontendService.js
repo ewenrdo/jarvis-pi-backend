@@ -109,10 +109,28 @@ function createFrontendService(frontPath) {
             }
         });
 
-        setTimeout(() => {
-            console.log(devMode ? "Lancement de Chromium en mode développement..." : "Lancement de Chromium en mode kiosque...");
-            launchChromiumKiosk('http://localhost:3000', devMode);
-        }, 2000);
+        const checkAndLaunch = async () => {
+            const interfaceAvailable = await isInterfaceAvailable();
+
+            if (interfaceAvailable) {
+                console.log("Le front-end est disponible. Lancement de Chromium...");
+                launchChromiumKiosk('http://localhost:3000', devMode);
+            } else {
+                console.log("Le front-end n'est pas encore disponible, nouvelle tentative dans 2 secondes...");
+                setTimeout(checkAndLaunch, 2000);
+            }
+        };
+
+        setTimeout(checkAndLaunch, 3000);
+    }
+
+    async function isInterfaceAvailable() {
+        try {
+            const response = await fetch('http://localhost:3000', { method: 'HEAD' });
+            return response.ok;
+        } catch {
+            return false;
+        }
     }
 
     function focus(res) {
