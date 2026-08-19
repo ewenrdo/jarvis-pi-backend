@@ -19,9 +19,10 @@ function attemptLaunchChromium(browserCandidates, index, url, devMode) {
         '--ignore-gpu-blocklist',
         '--enable-gpu-rasterization',
         '--enable-zero-copy',
-        '--remote-debugging-address=0.0.0.0',
-        '--remote-debugging-port=9222',
         '--password-store=basic',
+        // Récupérer les logs de Chromium pour le débogage
+        '--enable-logging=stderr',
+        '--v=1',
         url
     ], {
         detached: true,
@@ -114,7 +115,7 @@ function createFrontendService(frontPath) {
 
             if (interfaceAvailable) {
                 console.log("Le front-end est disponible. Lancement de Chromium...");
-                launchChromiumKiosk('http://localhost:3000', !devMode);
+                launchChromiumKiosk('http://localhost:3000', devMode);
             } else {
                 console.log("Le front-end n'est pas encore disponible, nouvelle tentative dans 2 secondes...");
                 setTimeout(checkAndLaunch, 2000);
