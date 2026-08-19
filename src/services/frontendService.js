@@ -114,7 +114,7 @@ function createFrontendService(frontPath) {
 
             if (interfaceAvailable) {
                 console.log("Le front-end est disponible. Lancement de Chromium...");
-                launchChromiumKiosk('http://localhost:3000', devMode);
+                launchChromiumKiosk('http://localhost:3000', !devMode);
             } else {
                 console.log("Le front-end n'est pas encore disponible, nouvelle tentative dans 2 secondes...");
                 setTimeout(checkAndLaunch, 2000);
