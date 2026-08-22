@@ -6,9 +6,9 @@ set -e
 echo "=== Début de l'installation de Jarvis Pi Backend ==="
 
 # 1. Mise à jour et installation des dépendances système (avec Kodi, Chromium, et InputStream Adaptive)
-echo "--- Installation des dépendances système (Kodi, InputStream Adaptive, Chromium, wmctrl, brightnessctl) ---"
+echo "--- Installation des dépendances système (Kodi, InputStream Adaptive, Chromium, wmctrl) ---"
 sudo apt update
-sudo apt install -y wmctrl brightnessctl chromium-browser kodi kodi-inputstream-adaptive wget python3-pip
+sudo apt install -y wmctrl chromium-browser kodi kodi-inputstream-adaptive wget python3-pip
 
 # 2. Configuration des groupes utilisateurs
 echo "--- Configuration des permissions utilisateurs ---"
@@ -139,44 +139,49 @@ fi
 echo "--- Installation des dépendances npm du backend ---"
 npm install
 
-# 9. Configuration optionnelle du service systemd (Démarrage auto + redémarrage sur crash)
+# 9. Installation et configuration de PM2 pour la gestion du processus backend
 echo "------------------------------------------------"
-read -p "Souhaitez-vous lancer le serveur automatiquement au démarrage et le relancer en cas de crash (service Systemd) ? (y/N) : " AUTOSTART
+read -p "Souhaitez-vous configurer PM2 pour lancer le backend automatiquement au démarrage et le relancer en cas de crash ? (y/N) : " AUTOSTART
 AUTOSTART=${AUTOSTART:-N}
 
 if [[ "$AUTOSTART" =~ ^[Yy]$ ]]; then
     BACKEND_DIR="$(pwd)"
-    SERVICE_FILE="/etc/systemd/system/jarvis-pi-backend.service"
 
-    echo "--- Création du service Systemd ---"
-    sudo bash -c "cat << EOF > $SERVICE_FILE
-[Unit]
-Description=Jarvis Pi Backend Service
-After=network.target graphical.target
+    echo "--- Installation globale de PM2 ---"
+    sudo npm install -g pm2
 
-[Service]
-Type=simple
-User=$USER
-WorkingDirectory=$BACKEND_DIR
-ExecStart=/usr/bin/node $BACKEND_DIR/server.js
-Restart=always
-RestartSec=10
-Environment=DISPLAY=:0
-Environment=XAUTHORITY=$HOME/.Xauthority
-Environment=RENAULT_STATS_PI_PATH=$RENAULT_DIR
-EnvironmentFile=$BACKEND_DIR/.env
+    echo "--- Création du fichier de configuration PM2 (ecosystem.config.js) ---"
+    cat << EOF > "ecosystem.config.js"
+module.exports = {
+  apps: [
+    {
+      name: "jarvis-backend",
+      script: "./server.js",
+      cwd: "$BACKEND_DIR",
+      env_file: "./.env",
+      env: {
+        DISPLAY: ":0",
+        XAUTHORITY: "$HOME/.Xauthority",
+        RENAULT_STATS_PI_PATH: "$RENAULT_DIR"
+      }
+    }
+  ]
+};
+EOF
 
-[Install]
-WantedBy=multi-user.target
-EOF"
+    echo "--- Démarrage de l'application via PM2 ---"
+    pm2 start ecosystem.config.js
 
-    echo "--- Activation et démarrage du service ---"
-    sudo systemctl daemon-reload
-    sudo systemctl enable jarvis-pi-backend.service
-    sudo systemctl start jarvis-pi-backend.service
-    echo "Service systemd configuré et démarré avec succès !"
+    echo "--- Sauvegarde de l'état de PM2 pour persistance ---"
+    pm2 save
+
+    echo "--- Configuration du hook de démarrage automatique au boot ---"
+    # PM2 fournit une commande pour générer le service de démarrage systemd sous le capot pour l'utilisateur
+    pm2 startup systemd -u "$USER" --hp "$HOME" || true
+
+    echo "PM2 configuré et démarré avec succès !"
 else
-    echo "Service systemd ignoré."
+    echo "Configuration PM2 ignorée."
 fi
 
 echo "=== Changement des permissions de ./scripts/power.sh pour le rendre exécutable ==="

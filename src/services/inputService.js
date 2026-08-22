@@ -37,15 +37,6 @@ function createInputService(handlers = {}) {
     return reader;
 }
 
-function setBrightness(level) {
-    exec(`brightnessctl set ${level}%`, (err) => {
-        if (err) {
-            console.error("Impossible de modifier la luminosité");
-        }
-    });
-}
-
 module.exports = {
-    createInputService,
-    setBrightness,
+    createInputService
 };

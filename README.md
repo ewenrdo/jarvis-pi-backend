@@ -5,12 +5,12 @@ Serveur Node.js pour gérer les commandes et récupérer les données de certain
 ## Configuration
 
 > [!TIP]
-> Vous pouvez utiliser le script `install.sh` pour installer automatiquement les dépendances et configurer le serveur. Il est recommandé de l'utiliser pour éviter les erreurs de configuration.
+> Vous pouvez utiliser le script `./scripts/install.sh` pour installer automatiquement les dépendances et configurer le serveur. Il est recommandé de l'utiliser pour éviter les erreurs de configuration.
 
 Installez les dépendances systèmes suivantes :
 ```bash
 sudo apt update
-sudo apt install wmctrl brightnessctl
+sudo apt install wmctrl
 sudo usermod -aG video $USER
 ```
 

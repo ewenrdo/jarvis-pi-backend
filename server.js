@@ -1,7 +1,7 @@
 const { PORT, FRONT_PATH, RENAULT_STATS_PATH, KODI_USER, KODI_PASSWORD, IDFM_API_KEY } = require('./src/config/env');
 const { createFrontendService } = require('./src/services/frontendService');
 const { createKodiService } = require('./src/services/kodiService');
-const { createInputService, setBrightness } = require('./src/services/inputService');
+const { createInputService } = require('./src/services/inputService');
 const { createJarvisServer } = require('./src/server/createJarvisServer');
 const { createRenaultService } = require('./src/services/renaultService');
 const { getNotificationService } = require('./src/services/notificationService');
