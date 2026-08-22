@@ -1,6 +1,6 @@
 {
   "name": "jarvis-pi-backend",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "API for jarvis-pi dashboard on RaspOS",
   "license": "ISC",
   "author": "Ewen Rodrigues de Oliveira",

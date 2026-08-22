@@ -179,5 +179,8 @@ else
     echo "Service systemd ignoré."
 fi
 
+echo "=== Changement des permissions de ./scripts/power.sh pour le rendre exécutable ==="
+chmod +x ./scripts/power.sh
+
 echo "=== Installation terminée avec succès ! ==="
 echo "Le fichier zip du repo Kodi CastagnaIT a été téléchargé dans votre dossier personnel (~/repository.castagnait.zip)."

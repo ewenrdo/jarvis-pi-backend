@@ -5,6 +5,17 @@ function shouldReloadAtMidnight(now = new Date()) {
     return now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() < 5;
 }
 
+function shouldEnableScreen(now = new Date()) {
+    const { SCREEN_START } = require('../config/env');
+    return now.getHours() === parseInt(SCREEN_START) && now.getMinutes() < 1;
+}
+
+function shouldDisableScreen(now = new Date()) {
+    const { SCREEN_END } = require('../config/env');
+    return now.getHours() === parseInt(SCREEN_END) && now.getMinutes() < 1;
+}
+
+
 function launchChromiumKiosk(url, devMode = false) {
     const browserCandidates = [process.env.CHROMIUM_BINARY || 'chromium-browser', 'chromium'];
     attemptLaunchChromium(browserCandidates, 0, url, devMode);
@@ -57,12 +68,54 @@ function buildChromiumEnv() {
 }
 
 function createFrontendService(frontPath) {
+
+    function turnOffScreen() {
+        exec("./scripts/power.sh off", (err, stdout, stderr) => {
+            if (err) {
+                console.error("Erreur lors de l'extinction de l'écran :", stderr || err.message);
+            }
+        });
+    }
+
+    function turnOnScreen() {
+        exec("./scripts/power.sh on", (err, stdout, stderr) => {
+            if (err) {
+                console.error("Erreur lors de l'allumage de l'écran :", stderr || err.message);
+            }
+        });
+    }
+
     function startTimeBasedActions() {
         let midnightReloadTriggered = false;
+        let screenStartTriggered = false;
+        let screenEndTriggered = false;
 
         setInterval(() => {
             const now = new Date();
 
+            // Écran ON
+            if (shouldEnableScreen(now)) {
+                if (!screenStartTriggered) {
+                    screenStartTriggered = true;
+                    console.log("Activation de l'écran...");
+                    turnOnScreen();
+                }
+            } else {
+                screenStartTriggered = false;
+            }
+
+            // Écran OFF
+            if (shouldDisableScreen(now)) {
+                if (!screenEndTriggered) {
+                    screenEndTriggered = true;
+                    console.log("Désactivation de l'écran...");
+                    turnOffScreen();
+                }
+            } else {
+                screenEndTriggered = false;
+            }
+
+            // Reload à minuit
             if (!shouldReloadAtMidnight(now)) {
                 midnightReloadTriggered = false;
                 return;
@@ -73,8 +126,8 @@ function createFrontendService(frontPath) {
             }
 
             midnightReloadTriggered = true;
-            console.log('Minuit atteint, rechargement de Chromium...');
-            reloadChromium('http://localhost:3000');
+            console.log("Minuit atteint, rechargement de Chromium...");
+            reloadChromium("http://localhost:3000");
         }, 1000);
     }
 
