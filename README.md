@@ -55,6 +55,6 @@ Environment=DISPLAY=:0
 Environment=XAUTHORITY=/home/votre_utilisateur/.Xauthority
 ```
 
-## Réflexion
+## Configuration IDFM PRIM
 
-Si la télécommande ne fonctionne pas, essayez dans le code de remplacer le canal `alphanumeric` par `key` dans le `server.js`. Cela peut résoudre certains problèmes de compatibilité avec certaines télécommandes.
+Liste des zones d'arrêts : https://prim.iledefrance-mobilites.fr/fr/jeux-de-donnees/zones-d-arrets.

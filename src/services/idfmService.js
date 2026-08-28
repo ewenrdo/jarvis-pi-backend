@@ -30,7 +30,8 @@ function createIDFMService({ apiKey }) {
           return {
             id: visit.ItemIdentifier,
             line: journey.LineRef?.value || '',
-            modeIcon: getTransportIcon(journey.LineRef?.value || ''),
+            shortLine: getTransportIcon(journey.LineRef?.value || ''),
+            journeyNote: journey.JourneyNote?.[0]?.value || '',
             destination: call.DestinationDisplay?.[0]?.value || journey.DestinationName?.[0]?.value || 'Inconnue',
             aimedTime: aimedDeparture.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
             expectedTime: expectedDeparture ? expectedDeparture.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : null,
@@ -39,6 +40,14 @@ function createIDFMService({ apiKey }) {
           };
         });
         return departures;
+    }
+
+
+    function getTransportIcon(line) {
+        if(line == 'STIF:Line::C01739:') return 'J';
+        else if (line == 'STIF:Line::C01727:') return 'C';
+        else if (line == 'STIF:Line::C01737:') return 'H';
+        else return line;
     }
 
     async function getDisruptions() {

@@ -82,13 +82,13 @@ function createJarvisServer({ kodiService, renaultService, notificationService, 
                 });
         } else if (req.method === 'GET' && req.url === '/api/idfm/next-departures') {
 
-            const ermontStopId = 'STIF%3AStopPoint%3AQ%3A41085%3A';
+            const ermontStopId = 'STIF%3AStopArea%3ASP%3A47898%3A';
             const ermontCLineId = 'STIF%3ALine%3AC01727%3A1%3A';
 
             idfmService.nextTrainsFromStation(ermontStopId)
                 .then((departures) => {
                     res.writeHead(200, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify(departures));
+                    res.end(JSON.stringify(departures.filter(dep => dep.aimedTime != "Invalid Date")));
                 })
                 .catch((error) => {
                     console.error('Erreur lors de la récupération des prochains départs IDFM :', error);
