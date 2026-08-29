@@ -13,7 +13,11 @@ function shouldScreenBeOn(now = new Date()) {
     const hour = now.getHours();
 
     
-    return false;
+    if (start < end) {
+        return hour >= start && hour < end;
+    }
+
+    return hour >= start || hour < end;
 }
 
 function launchChromiumKiosk(url, devMode = false) {
@@ -62,7 +66,7 @@ function buildChromiumEnv() {
 }
 
 function createFrontendService(frontPath) {
-    const POWER_SCRIPT = path.resolve(__dirname, '../scripts/power.sh');
+    const POWER_SCRIPT = path.resolve(__dirname, '../../scripts/power.sh');
 
     function turnOffScreen() {
         console.log('[SCREEN] Exécution de power.sh off...');
