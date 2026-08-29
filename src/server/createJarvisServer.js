@@ -93,7 +93,7 @@ function createJarvisServer({ kodiService, renaultService, notificationService, 
                 .catch((error) => {
                     console.error('Erreur lors de la récupération des prochains départs IDFM :', error);
                     res.writeHead(502, { 'Content-Type': 'application/json' });
-                    res.end(JSON.stringify({ error: error || 'Impossible de récupérer les prochains départs IDFM' }));
+                    res.end(JSON.stringify({ error: error.message || 'Impossible de récupérer les prochains départs IDFM' }));
                 });
         } else {
             res.writeHead(404, { 'Content-Type': 'application/json' });

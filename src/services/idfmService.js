@@ -11,11 +11,23 @@ function createIDFMService({ apiKey }) {
 
     async function nextTrainsFromStation(idfmStopId) {
 
+        const now = new Date();
+
         // Vérifier le cache
         const cached = cache.trains.get(idfmStopId);
 
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-            return cached.data;
+
+            // Le cache contient déjà les données au bon format.
+            // On reconstruit uniquement la date de départ à partir de
+            // la donnée interne stockée dans le cache pour filtrer les trains passés.
+            return cached.data.filter(train => {
+                return train.departureTimestamp > now.getTime();
+            }).map(train => {
+                // Ne pas exposer departureTimestamp dans le retour
+                const { departureTimestamp, ...departure } = train;
+                return departure;
+            });
         }
 
         // Pas de cache valide -> appel API
@@ -41,53 +53,59 @@ function createIDFMService({ apiKey }) {
             data?.Siri?.ServiceDelivery?.StopMonitoringDelivery?.[0]
                 ?.MonitoredStopVisit || [];
 
-        const departures = stopVisits.map((visit) => {
-            const journey = visit.MonitoredVehicleJourney;
-            const call = journey.MonitoredCall;
+        const departures = stopVisits
+            .map((visit) => {
+                const journey = visit.MonitoredVehicleJourney;
+                const call = journey.MonitoredCall;
 
-            const aimedDeparture = new Date(call.AimedDepartureTime);
+                const aimedDeparture = new Date(call.AimedDepartureTime);
 
-            const expectedDeparture = call.ExpectedDepartureTime
-                ? new Date(call.ExpectedDepartureTime)
-                : null;
+                const expectedDeparture = call.ExpectedDepartureTime
+                    ? new Date(call.ExpectedDepartureTime)
+                    : null;
 
-            let delayMinutes = 0;
+                let delayMinutes = 0;
 
-            if (
-                expectedDeparture &&
-                call.DepartureStatus === 'delayed'
-            ) {
-                delayMinutes = Math.round(
-                    (expectedDeparture - aimedDeparture) / 60000
-                );
-            }
+                if (
+                    expectedDeparture &&
+                    call.DepartureStatus === 'delayed'
+                ) {
+                    delayMinutes = Math.round(
+                        (expectedDeparture - aimedDeparture) / 60000
+                    );
+                }
 
-            return {
-                id: visit.ItemIdentifier,
-                line: journey.LineRef?.value || '',
-                shortLine: getTransportIcon(journey.LineRef?.value || ''),
-                journeyNote: journey.JourneyNote?.[0]?.value || '',
-                destination:
-                    call.DestinationDisplay?.[0]?.value ||
-                    journey.DestinationName?.[0]?.value ||
-                    'Inconnue',
+                return {
+                    id: visit.ItemIdentifier,
+                    line: journey.LineRef?.value || '',
+                    shortLine: getTransportIcon(journey.LineRef?.value || ''),
+                    journeyNote: journey.JourneyNote?.[0]?.value || '',
+                    destination:
+                        call.DestinationDisplay?.[0]?.value ||
+                        journey.DestinationName?.[0]?.value ||
+                        'Inconnue',
 
-                aimedTime: aimedDeparture.toLocaleTimeString([], {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                }),
-
-                expectedTime: expectedDeparture
-                    ? expectedDeparture.toLocaleTimeString([], {
+                    aimedTime: aimedDeparture.toLocaleTimeString([], {
                         hour: '2-digit',
                         minute: '2-digit'
-                    })
-                    : null,
+                    }),
 
-                status: call.DepartureStatus,
-                delay: delayMinutes
-            };
-        });
+                    expectedTime: expectedDeparture
+                        ? expectedDeparture.toLocaleTimeString([], {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        })
+                        : null,
+
+                    status: call.DepartureStatus,
+                    delay: delayMinutes,
+
+                    // Utilisé uniquement en interne pour le filtrage du cache
+                    departureTimestamp: aimedDeparture.getTime()
+                };
+            })
+            // Ne garder que les trains qui ne sont pas encore partis
+            .filter(train => train.departureTimestamp > now.getTime());
 
         // Stocker dans le cache
         cache.trains.set(idfmStopId, {
@@ -95,7 +113,11 @@ function createIDFMService({ apiKey }) {
             data: departures
         });
 
-        return departures;
+        // Retirer departureTimestamp du résultat public
+        return departures.map(train => {
+            const { departureTimestamp, ...departure } = train;
+            return departure;
+        });
     }
 
 
