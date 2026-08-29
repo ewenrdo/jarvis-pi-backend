@@ -7,7 +7,8 @@ function shouldReloadAtMidnight(now = new Date()) {
 
 function shouldEnableScreen(now = new Date()) {
     const { SCREEN_START } = require('../config/env');
-    return now.getHours() === parseInt(SCREEN_START) && now.getMinutes() < 1;
+    // regarder si il est 16h07 (test temporaire)
+    return now.getHours() === 16 && now.getMinutes() === 7;
 }
 
 function shouldDisableScreen(now = new Date()) {
