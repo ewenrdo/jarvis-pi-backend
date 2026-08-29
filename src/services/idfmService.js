@@ -18,19 +18,15 @@ function createIDFMService({ apiKey }) {
 
         if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
 
-            // Le cache contient déjà les données au bon format.
-            // On reconstruit uniquement la date de départ à partir de
-            // la donnée interne stockée dans le cache pour filtrer les trains passés.
             return cached.data.filter(train => {
                 return train.departureTimestamp > now.getTime();
             }).map(train => {
-                // Ne pas exposer departureTimestamp dans le retour
                 const { departureTimestamp, ...departure } = train;
                 return departure;
             });
         }
 
-        // Pas de cache valide -> appel API
+        // Si pas de cache valide -> appel API
         const response = await fetch(
             `https://prim.iledefrance-mobilites.fr/marketplace/stop-monitoring?MonitoringRef=${idfmStopId}`,
             {
