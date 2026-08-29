@@ -1,21 +1,20 @@
 const { exec, spawn } = require('child_process');
 const os = require('os');
+const path = require('path');
 
 function shouldReloadAtMidnight(now = new Date()) {
     return now.getHours() === 0 && now.getMinutes() === 0 && now.getSeconds() < 5;
 }
 
-function shouldEnableScreen(now = new Date()) {
-    const { SCREEN_START } = require('../config/env');
-    // regarder si il est 16h07 (test temporaire)
-    return now.getHours() === 16 && now.getMinutes() === 7;
-}
+function shouldScreenBeOn(now = new Date()) {
+    const { SCREEN_START, SCREEN_END } = require('../config/env');
+    const start = parseInt(SCREEN_START, 10);
+    const end = parseInt(SCREEN_END, 10);
+    const hour = now.getHours();
 
-function shouldDisableScreen(now = new Date()) {
-    const { SCREEN_END } = require('../config/env');
-    return now.getHours() === parseInt(SCREEN_END) && now.getMinutes() < 1;
+    
+    return false;
 }
-
 
 function launchChromiumKiosk(url, devMode = false) {
     const browserCandidates = [process.env.CHROMIUM_BINARY || 'chromium-browser', 'chromium'];
@@ -26,7 +25,7 @@ function attemptLaunchChromium(browserCandidates, index, url, devMode) {
     const browserCommand = browserCandidates[index];
     const child = spawn(browserCommand, [
         devMode ? '--disable-web-security' : '--kiosk',
-        '--overscroll-history-navigation=0', // Empêche le navigateur d'utiliser les retours d'historique
+        '--overscroll-history-navigation=0',
         '--enable-accelerated-video',
         '--ignore-gpu-blocklist',
         '--enable-gpu-rasterization',
@@ -45,7 +44,7 @@ function attemptLaunchChromium(browserCandidates, index, url, devMode) {
             return;
         }
 
-        console.log("Impossible de lancer chromium-browser (déjà ouvert ou non installé ?)");
+        console.error("Impossible de lancer Chromium :", error.message);
     });
 
     child.unref();
@@ -53,12 +52,9 @@ function attemptLaunchChromium(browserCandidates, index, url, devMode) {
 
 function buildChromiumEnv() {
     const env = { ...process.env };
-
-    // Détermine l'utilisateur actif (que l'on soit en sudo ou en utilisateur standard)
     const currentUser = process.env.SUDO_USER || process.env.USER || os.userInfo().username;
     const userHome = process.env.SUDO_USER ? `/home/${process.env.SUDO_USER}` : os.homedir();
 
-    // Force le display et l'authentification X11 pour la session graphique
     env.DISPLAY = env.DISPLAY || ':0';
     env.XAUTHORITY = env.XAUTHORITY || `${userHome}/.Xauthority`;
 
@@ -66,54 +62,70 @@ function buildChromiumEnv() {
 }
 
 function createFrontendService(frontPath) {
+    const POWER_SCRIPT = path.resolve(__dirname, '../scripts/power.sh');
 
     function turnOffScreen() {
-        exec("./scripts/power.sh off", (err, stdout, stderr) => {
-            if (err) {
-                console.error("Erreur lors de l'extinction de l'écran :", stderr || err.message);
+        console.log('[SCREEN] Exécution de power.sh off...');
+
+        exec(`"${POWER_SCRIPT}" off`, (err, stdout, stderr) => {
+            if (stdout) {
+                console.log('[SCREEN]', stdout.trim());
             }
+
+            if (stderr) {
+                console.error('[SCREEN]', stderr.trim());
+            }
+
+            if (err) {
+                console.error("[SCREEN] Erreur lors de l'extinction :", err.message);
+                return;
+            }
+
+            console.log('[SCREEN] Écran éteint avec succès.');
         });
     }
 
     function turnOnScreen() {
-        exec("./scripts/power.sh on", (err, stdout, stderr) => {
-            if (err) {
-                console.error("Erreur lors de l'allumage de l'écran :", stderr || err.message);
+        console.log('[SCREEN] Exécution de power.sh on...');
+
+        exec(`"${POWER_SCRIPT}" on`, (err, stdout, stderr) => {
+            if (stdout) {
+                console.log('[SCREEN]', stdout.trim());
             }
+
+            if (stderr) {
+                console.error('[SCREEN]', stderr.trim());
+            }
+
+            if (err) {
+                console.error("[SCREEN] Erreur lors de l'allumage :", err.message);
+                return;
+            }
+
+            console.log('[SCREEN] Écran allumé avec succès.');
         });
     }
 
     function startTimeBasedActions() {
         let midnightReloadTriggered = false;
-        let screenStartTriggered = false;
-        let screenEndTriggered = false;
+        let lastScreenState = null;
 
         setInterval(() => {
             const now = new Date();
+            const screenShouldBeOn = shouldScreenBeOn(now);
 
-            // Écran ON
-            if (shouldEnableScreen(now)) {
-                if (!screenStartTriggered) {
-                    screenStartTriggered = true;
-                    console.log("Activation de l'écran...");
-                    turnOnScreen();
-                }
-            } else {
-                screenStartTriggered = false;
+            if (screenShouldBeOn && lastScreenState !== 'on') {
+                lastScreenState = 'on';
+                console.log(`[SCREEN] ${now.toLocaleTimeString()} → ON`);
+                turnOnScreen();
             }
 
-            // Écran OFF
-            if (shouldDisableScreen(now)) {
-                if (!screenEndTriggered) {
-                    screenEndTriggered = true;
-                    console.log("Désactivation de l'écran...");
-                    turnOffScreen();
-                }
-            } else {
-                screenEndTriggered = false;
+            if (!screenShouldBeOn && lastScreenState !== 'off') {
+                lastScreenState = 'off';
+                console.log(`[SCREEN] ${now.toLocaleTimeString()} → OFF`);
+                turnOffScreen();
             }
 
-            // Reload à minuit
             if (!shouldReloadAtMidnight(now)) {
                 midnightReloadTriggered = false;
                 return;
@@ -124,8 +136,8 @@ function createFrontendService(frontPath) {
             }
 
             midnightReloadTriggered = true;
-            console.log("Minuit atteint, rechargement de Chromium...");
-            reloadChromium("http://localhost:3000");
+            console.log('Minuit atteint, rechargement de Chromium...');
+            reloadChromium('http://localhost:3000');
         }, 1000);
     }
 
@@ -154,10 +166,11 @@ function createFrontendService(frontPath) {
 
         startTimeBasedActions();
 
-        console.log("Démarrage du front-end Vite...");
+        console.log('Démarrage du front-end Vite...');
+
         exec(`npm run dev --prefix ${frontPath}`, (err) => {
             if (err) {
-                console.error("Erreur lors du lancement de Vite :", err);
+                console.error('Erreur lors du lancement de Vite :', err);
             }
         });
 
@@ -165,7 +178,7 @@ function createFrontendService(frontPath) {
             const interfaceAvailable = await isInterfaceAvailable();
 
             if (interfaceAvailable) {
-                console.log("Le front-end est disponible. Lancement de Chromium...");
+                console.log('Le front-end est disponible. Lancement de Chromium...');
                 launchChromiumKiosk('http://localhost:3000', devMode);
             } else {
                 console.log("Le front-end n'est pas encore disponible, nouvelle tentative dans 2 secondes...");
@@ -193,15 +206,17 @@ function createFrontendService(frontPath) {
 
             if (res && !res.headersSent) {
                 res.writeHead(200, { 'Content-Type': 'application/json' });
-                res.end(JSON.stringify({ success: true, message: "Focus remis sur le Front-end" }));
+                res.end(JSON.stringify({
+                    success: true,
+                    message: 'Focus remis sur le Front-end'
+                }));
             }
         });
     }
 
-
     function resetFrontProcess() {
         exec('pkill -9 chrom*', () => {
-            console.log("Nettoyage initial des processus Chromium effectué.");
+            console.log('Nettoyage initial des processus Chromium effectué.');
         });
     }
 
