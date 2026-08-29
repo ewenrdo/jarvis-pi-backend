@@ -31,9 +31,6 @@ function attemptLaunchChromium(browserCandidates, index, url, devMode) {
         '--enable-gpu-rasterization',
         '--enable-zero-copy',
         '--password-store=basic',
-        // Récupérer les logs de Chromium pour le débogage
-        '--enable-logging=stderr',
-        '--v=1',
         url
     ], {
         detached: true,
