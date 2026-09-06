@@ -160,7 +160,7 @@ function createIDFMService({ apiKey }) {
 
     function filterUpcomingTrains(departures) {
 
-        const now = Date.now();
+        const now = Date.now() + 10 * 60 * 1000; // Ajouter 10 minutes pour le temps d'aller à la gare
 
         return departures
             .filter(train => train.departureTimestamp > now)
