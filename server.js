@@ -44,6 +44,35 @@ getNotificationService().createNotification({
   datetime: new Date().toISOString(),
 });
 
+
+const targetTime = new Date();
+targetTime.setHours(17, 30, 0, 0);
+
+async function runTest() {
+    console.log('🚀 Test de récupération des itinéraires...');
+
+    try {
+        // Test 1 : Arrivée aujourd'hui à 18h00
+        const targetTime = new Date();
+        targetTime.setHours(18, 0, 0, 0);
+
+        console.log(`⏰ Heure d'arrivée visée : ${targetTime.toLocaleTimeString()}`);
+        
+        const result = await idfmService.getFacultyJourneys(targetTime);
+
+        console.log('\n--- ITINÉRAIRE PRINCIPAL ---');
+        console.dir(result.primary, { depth: null, colors: true });
+
+        console.log('\n--- ITINÉRAIRE DE SECOURS ---');
+        console.dir(result.backup, { depth: null, colors: true });
+
+    } catch (error) {
+        console.error('❌ Échec du test :', error.message);
+    }
+}
+
+runTest();
+
 server.listen(PORT, () => {
     console.log(`Serveur natif Jarvis démarré sur http://localhost:${PORT}`);
     setTimeout(() => {

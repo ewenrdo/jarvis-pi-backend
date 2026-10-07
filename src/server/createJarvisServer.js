@@ -69,6 +69,25 @@ function createJarvisServer({ kodiService, renaultService, notificationService, 
 
             res.writeHead(200, { 'Content-Type': 'application/json' });
             res.end(JSON.stringify(updatedNotification));
+        } else if (req.method === 'GET' && req.url === '/api/idfm/next-departures-to-faculty') {
+            const targetTime = new Date();
+
+            // Arrondit au quart d'heure supérieur strict (+15 minutes par rapport au bloc actuel)
+            const currentMinutes = targetTime.getMinutes();
+            const nextQuarter = (Math.floor(currentMinutes / 15) + 1) * 15;
+
+            targetTime.setMinutes(nextQuarter, 0, 0); // Réinitialise aussi les secondes et ms à 0
+
+            idfmService.getFacultyJourneys(targetTime)
+                .then((journeys) => {
+                    res.writeHead(200, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify(journeys));
+                })
+                .catch((error) => {
+                    console.error('Erreur lors de la récupération des itinéraires IDFM :', error);
+                    res.writeHead(502, { 'Content-Type': 'application/json' });
+                    res.end(JSON.stringify({ error: 'Impossible de récupérer les itinéraires IDFM' }));
+                });
         } else if (req.method === 'GET' && req.url === '/api/idfm/disruptions') {
             idfmService.getDisruptions()
                 .then((disruptions) => {
