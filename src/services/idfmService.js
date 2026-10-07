@@ -4,7 +4,7 @@ function createIDFMService({ apiKey }) {
 
     // Coordonnées GPS (lon,lat)
     const DEPARTURE_LOCATION = '2.2796409130096436;48.975181579589844';
-    const FACULTY_LOCATION = '2.3794524669647217,48.8297004699707';
+    const FACULTY_LOCATION = '2.3794524669647217;48.8297004699707';
 
     // Cache en mémoire
     const cache = {
@@ -54,24 +54,23 @@ function createIDFMService({ apiKey }) {
     }
 
     /**
-     * Récupère les 2 meilleurs itinéraires (Principal + Secours) vers la fac sans bus.
+     * Récupère les 2 meilleurs itinéraires vers la fac à partir de l'heure donnée.
      * 
-     * @param {Date|string} targetArrivalTime Heure d'arrivée souhaitée (par défaut : maintenant)
+     * @param {Date|string} targetDepartureTime Heure de départ souhaitée (par défaut : maintenant)
      */
-    async function getFacultyJourneys(targetArrivalTime = new Date()) {
-        const arrivalDate = targetArrivalTime instanceof Date
-            ? targetArrivalTime
-            : new Date(targetArrivalTime);
+    async function getFacultyJourneys(targetDepartureTime = new Date()) {
+        const departureDate = targetDepartureTime instanceof Date
+            ? targetDepartureTime
+            : new Date(targetDepartureTime);
 
-        const formattedDateTime = formatNavitiaDateTime(arrivalDate);
+        const formattedDateTime = formatNavitiaDateTime(departureDate);
 
-        // URL de base de l'API PRIM / IDFM Navitia
         const url = new URL('https://prim.iledefrance-mobilites.fr/marketplace/v2/navitia/journeys');
 
         url.searchParams.append('from', DEPARTURE_LOCATION);
         url.searchParams.append('to', FACULTY_LOCATION);
         url.searchParams.append('datetime', formattedDateTime);
-        url.searchParams.append('datetime_represents', 'arrival');
+        url.searchParams.append('datetime_represents', 'departure');
         url.searchParams.append('forbidden_uris[]', 'physical_mode:Bus');
         url.searchParams.append('first_section_mode[]', 'walking');
         url.searchParams.append('last_section_mode[]', 'walking');
@@ -95,33 +94,40 @@ function createIDFMService({ apiKey }) {
         const journeys = data.journeys || [];
 
         const parsedJourneys = journeys.map((journey, index) => {
-            const departureTime = parseNavitiaDateTime(journey.departure_date_time);
-            const arrivalTime = parseNavitiaDateTime(journey.arrival_date_time);
+    const homeDepartureTime = parseNavitiaDateTime(journey.departure_date_time);
+    const arrivalTime = parseNavitiaDateTime(journey.arrival_date_time);
 
-            const now = new Date();
-            const minutesBeforeDeparture = Math.round((departureTime - now) / 60000);
+    // Extraction propre de la section train
+    const firstPtSection = (journey.sections || []).find(sec => sec.type === 'public_transport');
+    const trainDepStr = firstPtSection?.departure_date_time || firstPtSection?.base_departure_date_time;
+    const firstTrainTime = trainDepStr ? parseNavitiaDateTime(trainDepStr) : null;
 
-            const steps = (journey.sections || [])
-                .filter(sec => sec.type === 'public_transport')
-                .map(sec => ({
-                    mode: sec.display_informations?.commercial_mode || 'Transport',
-                    line: sec.display_informations?.code || '',
-                    shortLine: getTransportIcon(sec.display_informations?.network || sec.display_informations?.code),
-                    from: sec.from?.name || '',
-                    to: sec.to?.name || '',
-                    direction: sec.display_informations?.direction || ''
-                }));
+    const steps = (journey.sections || [])
+        .filter(sec => sec.type === 'public_transport')
+        .map(sec => ({
+            mode: sec.display_informations?.commercial_mode || 'Transport',
+            line: sec.display_informations?.code || '',
+            shortLine: getTransportIcon(sec.display_informations?.network || sec.display_informations?.code),
+            from: sec.from?.name || '',
+            to: sec.to?.name || '',
+            direction: sec.display_informations?.direction || ''
+        }));
 
-            return {
-                type: index === 0 ? 'principal' : 'secours',
-                minutesBeforeDeparture,
-                departureTime: departureTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                arrivalTime: arrivalTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-                durationMinutes: Math.round(journey.duration / 60),
-                transfers: journey.nb_transfers,
-                steps
-            };
-        });
+    return {
+        type: index === 0 ? 'principal' : 'secours',
+        // ISO raw pour un calcul dynamique et précis côté front
+        homeDepartureIso: homeDepartureTime.toISOString(),
+        firstTrainIso: firstTrainTime ? firstTrainTime.toISOString() : null,
+        departureTime: homeDepartureTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        firstTrainDepartureTime: firstTrainTime 
+            ? firstTrainTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) 
+            : null,
+        arrivalTime: arrivalTime.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+        durationMinutes: Math.round(journey.duration / 60),
+        transfers: journey.nb_transfers,
+        steps
+    };
+});
 
         return {
             primary: parsedJourneys[0] || null,
