@@ -7,17 +7,24 @@ function shouldReloadAtMidnight(now = new Date()) {
 }
 
 function shouldScreenBeOn(now = new Date()) {
-    const { SCREEN_START, SCREEN_END } = require('../config/env');
+    const { SCREEN_START, SCREEN_END, SCREEN_START_WEEKEND, SCREEN_END_WEEKEND } = require('../config/env');
     const start = parseInt(SCREEN_START, 10);
     const end = parseInt(SCREEN_END, 10);
+    const startWeekend = parseInt(SCREEN_START_WEEKEND, 10);
+    const endWeekend = parseInt(SCREEN_END_WEEKEND, 10);
+    const isWeekend = now.getDay() === 0 || now.getDay() === 6; // 0 = Sunday, 6 = Saturday
+
+    const startTime = isWeekend ? startWeekend : start;
+    const endTime = isWeekend ? endWeekend : end;
+
     const hour = now.getHours();
 
     
-    if (start < end) {
-        return hour >= start && hour < end;
+    if (startTime < endTime) {
+        return hour >= startTime && hour < endTime;
     }
 
-    return hour >= start || hour < end;
+    return hour >= startTime || hour < endTime;
 }
 
 function launchChromiumKiosk(url, devMode = false) {

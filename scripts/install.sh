@@ -79,11 +79,17 @@ if [[ "$RECONFIGURE" =~ ^[Yy]$ ]]; then
     read -p "Port du serveur backend [5788] : " PORT_INPUT
     PORT=${PORT_INPUT:-5788}
 
-    read -p "Heure de démarrage de l'écran (00-23) [09] : " SCREEN_START_INPUT
+    read -p "Heure de démarrage de l'écran (semaine) (00-23) [09] : " SCREEN_START_INPUT
     SCREEN_START=${SCREEN_START_INPUT:-09}
 
-    read -p "Heure d'extinction de l'écran (00-23) [21] : " SCREEN_END_INPUT
+    read -p "Heure d'extinction de l'écran (semaine) (00-23) [21] : " SCREEN_END_INPUT
     SCREEN_END=${SCREEN_END_INPUT:-21}
+
+    read -p "Heure de démarrage de l'écran (week-end) (00-23) [10] : " SCREEN_START_WEEKEND_INPUT
+    SCREEN_START_WEEKEND=${SCREEN_START_WEEKEND_INPUT:-10}
+
+    read -p "Heure d'extinction de l'écran (week-end) (00-23) [23] : " SCREEN_END_WEEKEND_INPUT
+    SCREEN_END_WEEKEND=${SCREEN_END_WEEKEND_INPUT:-23}
 
     read -p "Votre clé API IDFM (Île-de-France Mobilités) : " IDFM_API_KEY
 
@@ -99,6 +105,8 @@ PORT=$PORT
 PATH_TO_FRONT=$HOME/jarvis-pi
 SCREEN_START=$SCREEN_START
 SCREEN_END=$SCREEN_END
+SCREEN_START_WEEKEND=$SCREEN_START_WEEKEND
+SCREEN_END_WEEKEND=$SCREEN_END_WEEKEND
 RENAULT_STATS_PI_PATH=$RENAULT_DIR
 MY_RENAULT_USERNAME=$RENAULT_USERNAME
 MY_RENAULT_PASSWORD=$RENAULT_PASSWORD

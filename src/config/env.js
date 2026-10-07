@@ -10,6 +10,9 @@ const RENAULT_STATS_PATH = process.env.RENAULT_STATS_PI_PATH || resolveFrontPath
 const IDFM_API_KEY = process.env.IDFM_API_KEY;
 const SCREEN_START = process.env.SCREEN_START || 9;
 const SCREEN_END = process.env.SCREEN_END || 21;
+const SCREEN_START_WEEKEND = process.env.SCREEN_START_WEEKEND || 9;
+const SCREEN_END_WEEKEND = process.env.SCREEN_END_WEEKEND || 21;
+
 module.exports = {
     PORT,
     FRONT_PATH,
@@ -18,5 +21,7 @@ module.exports = {
     RENAULT_STATS_PATH,
     IDFM_API_KEY,
     SCREEN_START,
-    SCREEN_END
+    SCREEN_END,
+    SCREEN_START_WEEKEND,
+    SCREEN_END_WEEKEND,
 };
